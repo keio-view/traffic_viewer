@@ -179,7 +179,9 @@ let unyoMap = {};
 
 async function fetchUnyoData() {
     try {
-        const res = await fetch(UNYO_TXT_URL + "?" + Date.now());
+        // 固定URLではなく、判定関数から取得したURLを使用
+        const targetUrl = getUnyoUrl();
+        const res = await fetch(targetUrl + "?" + Date.now())
         const text = await res.text();
         const lines = text.split(/\r?\n/);
         let currentTrains = [];
@@ -212,6 +214,17 @@ function getDestName(ik) {
         "112":"住", "114":"島", "118":"瑞", "120":"本", "000":"--", "300":"--", "301":"--"
     };
     return destMap[String(ik)] || ik;
+}
+// 平日・休日を判定して適切なURLを返す関数
+function getUnyoUrl() {
+    const now = new Date();
+    const day = now.getDay(); // 0:日, 1:月... 6:土
+    
+    // 祝日の判定を入れる場合はここに祝日リストとの照合を追加
+    const isHoliday = (day === 0 || day === 6); 
+
+    // 平日は 8R.txt、休日は 8H.txt を読み込む例
+    return isHoliday ? "unyo/h/8R.txt" : "unyo/h/wd.txt";
 }
 
 async function update() {
