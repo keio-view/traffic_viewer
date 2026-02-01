@@ -86,30 +86,29 @@
         .train-shape.sy-9, .train-shape.sy-11 { background-color: #f00095; }
 
         /* マップ遷移ボタンのスタイル */
-.map-nav-btn {
-    position: absolute;
-    width: 56px;
-    height: 31px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.7); /* 背景は少し暗く */
-    border: 1.5px solid var(--accent);
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 10px;
-    font-weight: bold;
-    border-radius: 4px;
-    z-index: 500; /* 列車よりは下、マップよりは上 */
-    box-sizing: border-box;
-    transition: background 0.2s, color 0.2s;
-}
+        .map-nav-btn {
+            position: absolute;
+            width: 56px;
+            height: 31px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1.5px solid var(--accent);
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            z-index: 500;
+            box-sizing: border-box;
+            transition: background 0.2s, color 0.2s;
+        }
 
-.map-nav-btn:hover {
-    background: var(--accent);
-    color: #000;
-}
-
+        .map-nav-btn:hover {
+            background: var(--accent);
+            color: #000;
+        }
     </style>
 </head>
 <body>
@@ -131,7 +130,6 @@
 
 <script>
 const FEED_URL = "https://i.opentidkeio.jp/data/traffic_info.json";
-const UNYO_TXT_URL = "unyo/h/8R.txt";
 
 const posCoords = {
     "E001_1": {x: 203, y: 135}, "E001_2": {x: 203, y: 163}, "E001_3": {x: 203, y: 191},
@@ -177,9 +175,27 @@ const posCoords = {
 
 let unyoMap = {};
 
+// 曜日・時間に基づいた運用データURLの取得
+function getUnyoUrl() {
+    const now = new Date();
+    const hours = now.getHours();
+
+    // 午前2時までは前日の日付として判定する
+    if (hours < 2) {
+        now.setDate(now.getDate() - 1);
+    }
+
+    const day = now.getDay(); // 0:日, 6:土
+    const isHoliday = (day === 0 || day === 6);
+
+    // 休日は 8R.txt、平日は wd.txt
+    return isHoliday ? "unyo/h/8R.txt" : "unyo/wd.txt";
+}
+
 async function fetchUnyoData() {
     try {
-        const res = await fetch(UNYO_TXT_URL + "?" + Date.now());
+        const targetUrl = getUnyoUrl();
+        const res = await fetch(targetUrl + "?" + Date.now());
         const text = await res.text();
         const lines = text.split(/\r?\n/);
         let currentTrains = [];
@@ -282,7 +298,7 @@ async function update() {
         document.querySelectorAll('.train').forEach(el => {
             if (!activeIds.has(el.id.replace('tr-', ''))) el.remove();
         });
-        document.getElementById('status').textContent = "更新: " + new Date().toLocaleTimeString();
+        document.getElementById('status').textContent = "更新: " + new Date().toLocaleTimeString() + " (" + getUnyoUrl() + ")";
     } catch (e) { console.error(e); }
 }
 
